@@ -1,0 +1,126 @@
+<html>
+    <head>
+    
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+body {
+    background-color: #4e56b7;
+  }
+.container {
+  height: 100vh;
+  width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  
+}
+
+.card {
+  border-radius: 10px;
+  box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.3);
+  width: 250;
+  height: 260px;
+  background-color: #ffffff;
+  padding: 10px 30px;
+}
+
+.card_title {
+  text-align: center;
+  padding: 10px;
+}
+
+.card_title h3 {
+  font-size: 26px;
+  font-weight: normal;
+}
+
+.form input {
+  margin: 10px 0;
+  width: 100%;
+  background-color: #e2e2e2;
+  border: none;
+  outline: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+}
+
+.form button {
+  background-color: #4e56b7;
+  color: #ffffff;
+  font-size: 16px;
+  outline: none;
+  border-radius: 5px;
+  border: none;
+  padding: 8px 15px;
+  width: 100%;
+}
+
+.card_terms {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.card_terms input[type="checkbox"] {
+  background-color: #e2e2e2;
+}
+
+.card_terms span {
+  margin: 5px;
+  font-size: 13px;
+}
+
+.card a {
+  color: #4e56b7;
+  text-decoration: none;
+}
+.card_title h2 {
+    font-size: 20px;
+    font-weight: normal;
+  }
+.s
+{
+    margin: 0;
+    padding: 0;
+  }
+  #message {
+    display:none;
+  }
+
+</style></head>
+    <body>
+<div class="container">
+    <div class="card">
+      <div class="card_title">
+        <br>
+        <h2>Facebook Page Integration</h2>
+        
+        
+      </div>
+      <div class="form" >
+    
+        
+                
+
+        
+
+
+    
+     
+    
+     <br>
+
+        <button type="button" style = "background:#4e56b7;" class="btn btn-primary" onclick="window.location.href = '{{ url_for('facebook')}}';">Connect Page</button> &nbsp
+        <button type="button" style = "background:#4e56b7;" class="btn btn-primary" onclick="window.location.href = '{{ url_for('logout')}}';">Logout</button>
+
+        &nbsp
+      </div>
+    </div>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+</div></body></html>
