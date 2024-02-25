@@ -1,6 +1,12 @@
 <html>
     <head>
-    
+      <script type="text/javascript"> 
+        window.history.pushState(null, null, document.URL);
+        window.addEventListener('popstate', function (event) {
+            window.history.pushState(null, null, document.URL);
+        });
+      
+    </script>  
         <style>
             @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
 
@@ -26,7 +32,7 @@ body {
   border-radius: 10px;
   box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.3);
   width: 460px;
-  height: 500px;
+  height: 480px;
   background-color: #ffffff;
   padding: 10px 30px;
 }
@@ -131,7 +137,7 @@ body {
     </div>
       </div>
       <div class="card_terms">
-          <input type="checkbox" name="" id="RememberMe">   &nbsp Remember Me
+          
       </div>
       <div class = "form">
         <button>Sign Up</button>

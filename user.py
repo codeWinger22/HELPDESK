@@ -124,9 +124,9 @@ class UserManual:
         self.password = password
     
 
-       
+     
     @staticmethod
-    def get(email):
+    def getemail(email):
       
         print(type(email))
         print(email)
@@ -143,6 +143,51 @@ class UserManual:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
             cur.execute('SELECT * FROM userManual WHERE email = ? ', (email, ))
+            rows = cur.fetchone()
+            if not rows:
+                return None
+            else:
+                user = UserManual(id = rows[0],name = rows[1],email = rows[2],password=rows[3])
+                print("this is user from get method ",user)
+                
+
+
+        
+
+            
+
+
+        #user = db.execute("SELECT * FROM user").fetchall()
+         
+           
+        except Exception as e:
+            print(e)
+        finally:
+            con.close()
+        
+        return user
+  
+
+
+       
+    @staticmethod
+    def get(userid):
+      
+        print(type(userid))
+        print(userid)
+        user = None
+        try:
+            con = sqlite3.connect("database.db")
+           
+        
+        except:
+            print("problem in connecting to database")
+       
+
+        try:
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
+            cur.execute('SELECT * FROM userManual WHERE id = ? ', (userid, ))
             rows = cur.fetchone()
             if not rows:
                 return None

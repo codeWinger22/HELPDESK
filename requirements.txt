@@ -44,3 +44,4 @@ zope.interface==6.0
 Authlib 
 requests_oauthlib
 oauthlib>=3.2.2
+Flask-WTF
