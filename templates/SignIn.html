@@ -1,6 +1,13 @@
 <html>
     <head>
-    
+   
+      <script type="text/javascript"> 
+        window.history.pushState(null, null, document.URL);
+        window.addEventListener('popstate', function (event) {
+            window.history.pushState(null, null, document.URL);
+        });
+      
+    </script>  
         <style>
             @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
 
@@ -125,14 +132,12 @@ body {
    
     </div>
       </div>
-      <div class="card_terms">
-          <input type="checkbox" name="" id="RememberMe">   &nbsp Remember Me
-      </div>
+   
       <div class = "form">
         <button>Log In</button>
 
     </form>
     </div>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-    <span style = "margin-top : 0;"> &nbsp &nbsp &nbsp New to HelpDesk? <a style = "color : #4e56b7" href={{ url_for('index') }}>Sign Up</a></span>
+    <span style = "margin-top : 0;">  New to HelpDesk? <a style = "color : #4e56b7" href={{ url_for('index') }}>Sign Up</a></span>
     &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<p style = "color:#4e56b7">{{msg}}</p>  
 </div></body></html>

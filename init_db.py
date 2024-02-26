@@ -20,3 +20,12 @@ def initialize():
         print("Created table successfully!")
     except Exception as e:
         print(e)
+
+    try:
+        conn.execute('CREATE TABLE if not exists tokens(id TEXT PRIMARY KEY , activetoken TEXT NOT NULL)')
+        print("Created table successfully!")
+    except Exception as e:
+        print(e)
+
+
+    
