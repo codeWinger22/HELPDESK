@@ -221,7 +221,111 @@ class UserManual:
         except:
             print("connection error in user create function")
         try:
+            
             cur.execute("INSERT INTO userManual(id,name, email, password) VALUES (?,?,?,?)",(userid_,name, email, password))
+            con.commit()
+            print("Record successfully added to database")
+          
+
+        except Exception as e:
+            con.rollback()
+            print("Error in the INSERT")
+            print(e)
+
+
+
+        finally:
+            con.close()
+
+        
+
+class tokens:
+    def __init__(self,id,activetoken):
+        self.id = id
+        self.activetoken =activetoken
+       
+    
+
+     
+    @staticmethod
+    def gettoken(id):
+      
+        print(type(id))
+        print(id)
+        user = None
+        try:
+            con = sqlite3.connect("database.db")
+           
+        
+        except:
+            print("problem in connecting to database")
+       
+
+        try:
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
+            cur.execute('SELECT * FROM tokens WHERE id = ? ', (id, ))
+            rows = cur.fetchone()
+            if not rows:
+                return None
+            else:
+                user = tokens(id = rows[0],activetoken=rows[1])
+                print("this is user from get method ",user)
+                
+
+
+        
+
+            
+
+
+        #user = db.execute("SELECT * FROM user").fetchall()
+         
+           
+        except Exception as e:
+            print(e)
+        finally:
+            con.close()
+        
+        return user
+  
+  
+    
+    @staticmethod
+    def update(id,activetoken):
+        try:
+            con = sqlite3.connect("database.db")
+            cur = con.cursor()
+        except:
+            print("connection error in user update function")
+        try:
+            cur.execute("UPDATE tokens SET activetoken = ?  WHERE id = ?",  (activetoken,id))
+
+            con.commit()
+            print("Record successfully updated to database")
+          
+
+        except Exception as e:
+            con.rollback()
+            print("Error in the UPDATE")
+            print(e)
+
+
+
+        finally:
+            con.close()
+
+     
+    @staticmethod
+    def create(id,activetoken):
+        try:
+            con = sqlite3.connect("database.db")
+            cur = con.cursor()
+        except:
+            print("connection error in token create function")
+        try:
+            
+            cur.execute("INSERT INTO tokens(id,activetoken) VALUES (?,?)",(id,activetoken))
             con.commit()
             print("Record successfully added to database")
           

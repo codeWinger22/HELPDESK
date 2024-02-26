@@ -25,7 +25,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, m
 from init_db import initialize
 from authlib.integrations.flask_client import OAuth
 from flask_cors import CORS, cross_origin
-from user import User,UserManual
+from user import User,UserManual,tokens
 import subprocess
 from flask_wtf import CSRFProtect
 import sqlite3
@@ -59,6 +59,7 @@ GOOGLE_DISCOVERY_URL = ("https://accounts.google.com/.well-known/openid-configur
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24)
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 
 socketio = SocketIO(app)
 app.config['SERVER_NAME'] = 'localhost:5000'
@@ -70,7 +71,8 @@ global Userdata
 Userdata = []
 global usertoken 
 usertoken = ""
-
+global active_user
+active_user = None
 # initialize a handler
 @login_manager.unauthorized_handler
 def unauthorized():
@@ -301,9 +303,9 @@ def facebook():
     SCOPE = ['pages_show_list', 'pages_read_engagement', 'pages_manage_metadata', 'pages_read_user_content', 'pages_messaging']
 
 # Facebook API endpoints
-    AUTHORIZE_URL = 'https://www.facebook.com/v12.0/dialog/oauth'
-    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v12.0/oauth/access_token'
-    GRAPH_API_URL = 'https://graph.facebook.com/v12.0'
+    AUTHORIZE_URL = 'https://www.facebook.com/v19.0/dialog/oauth'
+    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v19.0/oauth/access_token'
+    GRAPH_API_URL = 'https://graph.facebook.com/v19.0'
 
 # Webhook configuration
     WEBHOOK_VERIFY_TOKEN = 's'
@@ -322,12 +324,12 @@ def facebook_auth():
     FACEBOOK_CLIENT_ID = "936489797983122"
     FACEBOOK_CLIENT_SECRET = "0f5365e775d2923b060a102cde21edc4"
     REDIRECT_URI = 'http://localhost:5000/facebook/auth'
-    SCOPE = ['pages_show_list', 'pages_read_engagement', 'pages_manage_metadata', 'pages_read_user_content', 'pages_messaging']
+    SCOPE = ['pages_show_list','pages_messaging_subscriptions', 'pages_read_engagement', 'pages_manage_metadata', 'pages_read_user_content', 'pages_messaging']
 
 # Facebook API endpoints
-    AUTHORIZE_URL = 'https://www.facebook.com/v12.0/dialog/oauth'
-    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v12.0/oauth/access_token'
-    GRAPH_API_URL = 'https://graph.facebook.com/v12.0'
+    AUTHORIZE_URL = 'https://www.facebook.com/v19.0/dialog/oauth'
+    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v19.0/oauth/access_token'
+    GRAPH_API_URL = 'https://graph.facebook.com/v19.0'
 
 # Webhook configuration
     WEBHOOK_VERIFY_TOKEN = 's'
@@ -345,12 +347,29 @@ def facebook_auth():
         if response.status_code == 200:
             data = response.json()
             access_token = data['access_token']
+            
             session['access_token'] = access_token
+            active_user = access_token
+            print("this is active user")
+            print(active_user)
+           
+            
             # Get the Page Access Token with required permissions
             page_access_token = get_page_access_token(access_token)
+            
+            session["page"] = page_access_token[0]
+            session["pageid"] =page_access_token[1]
+            perman = get_long_lived_token(access_token,page_access_token[1])
+            search = tokens.gettoken(1)
+            if(search != None):
+                tokens.update(1,perman)
+            else:
+                tokens.create(1,perman)
+            session["perman"] = perman
             if page_access_token:
                 # Subscribe to webhook events using the Page Access Token
                 subscribe_to_webhook(page_access_token[0],page_access_token[1])
+                check_permissions(page_access_token[0],page_access_token[1])
                 return redirect(url_for('pages'))
             else:
                 return 'Failed to retrieve Page Access Token'
@@ -360,13 +379,37 @@ def facebook_auth():
         return 'Authorization failed'
 
 
+def check_permissions(page_access_token, page_id):
+    FACEBOOK_CLIENT_ID = "936489797983122"
+    FACEBOOK_CLIENT_SECRET = "0f5365e775d2923b060a102cde21edc4"
+    api_endpoint = "https://graph.facebook.com/debug_token"
+    params = {
+        'input_token': page_access_token,
+        'access_token': f"{FACEBOOK_CLIENT_ID}|{FACEBOOK_CLIENT_SECRET}"
+    }
+    response = requests.get(api_endpoint, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if 'data' in data and 'scopes' in data['data']:
+            permissions = data['data']['scopes']
+            print(permissions)
+            return permissions
+        else:
+            print("Permissions not found in response.")
+            return None
+    else:
+        print("Failed to retrieve permissions. Status code:", response.status_code)
+        print("Response:", response.json())
+        return None
 
 @app.route('/pages')
 def pages():
-    GRAPH_API_URL = 'https://graph.facebook.com/v12.0'
+    GRAPH_API_URL = 'https://graph.facebook.com/v19.0'
     access_token = session.get('access_token')
+    
     if access_token:
         response = requests.get(f"{GRAPH_API_URL}/me/accounts", params={'access_token': access_token})
+        
         if response.status_code == 200:
             pages_data = response.json()
             return str(pages_data)  # Return information about Facebook pages
@@ -382,9 +425,9 @@ def get_page_access_token(user_access_token):
     SCOPE = ['pages_show_list', 'pages_read_engagement', 'pages_manage_metadata', 'pages_read_user_content', 'pages_messaging']
 
 # Facebook API endpoints
-    AUTHORIZE_URL = 'https://www.facebook.com/v12.0/dialog/oauth'
-    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v12.0/oauth/access_token'
-    GRAPH_API_URL = 'https://graph.facebook.com/v12.0'
+    AUTHORIZE_URL = 'https://www.facebook.com/v19.0/dialog/oauth'
+    ACCESS_TOKEN_URL = 'https://graph.facebook.com/v19.0/oauth/access_token'
+    GRAPH_API_URL = 'https://graph.facebook.com/v19.0'
 
 # Webhook configuration
     WEBHOOK_VERIFY_TOKEN = 's'
@@ -402,13 +445,47 @@ def get_page_access_token(user_access_token):
             d = []
             d.append(pages_data['data'][0]['access_token'] )
             d.append( pages_data['data'][0]['id'])
+            
             return d  # Return the access token of the first page
     return None
 
+
+def get_long_lived_token(short_lived_token,page_id):
+    FACEBOOK_CLIENT_ID = "936489797983122"
+    FACEBOOK_CLIENT_SECRET = "0f5365e775d2923b060a102cde21edc4"
+    url = 'https://graph.facebook.com/v19.0/oauth/access_token'
+    params = {
+        'grant_type': 'fb_exchange_token',
+        'client_id': '936489797983122',
+        'client_secret': '0f5365e775d2923b060a102cde21edc4',
+        'fb_exchange_token': short_lived_token
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    if 'access_token' in data:
+        long_lived_token = data['access_token']
+        long_lived_page_access = get_long_lived_page_access_token(long_lived_token,page_id)
+        return long_lived_page_access
+    else:
+        return None
+
+
+def get_long_lived_page_access_token(long_lived_user_token, page_id):
+    """Exchange a long-lived User Access Token for a long-lived Page Access Token."""
+    url = f'https://graph.facebook.com/{page_id}?fields=access_token'
+    params = {'access_token': long_lived_user_token}
+    response = requests.get(url, params=params)
+    data = response.json()
+    if 'access_token' in data:
+        return data['access_token']
+    else:
+        return None
+
 def subscribe_to_webhook( page_access_token,page_id):
-   # Define the curl command with double quotes around the URL
+    session["page_access_token"] = page_access_token
+    session["page_id"] = page_id
     curl_command = f'curl -i -X POST "https://graph.facebook.com/{page_id}/subscribed_apps" ' \
-                   f'-d "subscribed_fields=feed" ' \
+                   f'-d "subscribed_fields=feed,messages" ' \
                    f'-d "access_token={page_access_token}"'
     
     # Execute the curl command
@@ -421,6 +498,29 @@ def subscribe_to_webhook( page_access_token,page_id):
             print(f"Failed to subscribe to webhook events: {error.decode()}")
     except Exception as e:
         print(f"Error: {e}")
+
+
+
+
+
+
+# def subscribe_to_webhook( page_access_token,page_id):
+    
+#    # Define the curl command with double quotes around the URL
+#     curl_command = f'curl -i -X POST "https://graph.facebook.com/{page_id}/subscribed_apps" ' \
+#                    f'-d "subscribed_fields=feed" ' \
+#                    f'-d "access_token={page_access_token}"'
+    
+#     # Execute the curl command
+#     try:
+#         process = subprocess.Popen(curl_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#         output, error = process.communicate()
+#         if process.returncode == 0:
+#             print("Webhook subscription successful.")
+#         else:
+#             print(f"Failed to subscribe to webhook events: {error.decode()}")
+#     except Exception as e:
+#         print(f"Error: {e}")
         
 # @app.route('/facebook/')
 # def facebook():
@@ -582,7 +682,13 @@ def revoke_facebook_token(user_access_token):
     
 
 
-# 
+
+
+
+
+
+
+
 
 
 
@@ -662,6 +768,11 @@ def process_webhook_data(data):
     # Here you can handle the incoming webhook data
     # Extract relevant information from the data and perform necessary actions
     print("Received webhook data:", data)
+    
+    # Extract recipient ID and page ID from the response
+    recipient_id = data['entry'][0]['messaging'][0]['sender']['id']
+    page_id = data['entry'][0]['messaging'][0]['recipient']['id']
+    
     # Example: Extract message text from data and process it
     if 'entry' in data and len(data['entry']) > 0:
         for entry in data['entry']:
@@ -670,8 +781,54 @@ def process_webhook_data(data):
                     if 'message' in message and 'text' in message['message']:
                         message_text = message['message']['text']
                         print("Received message:", message_text)
-                        # Process the message further (e.g., send a response)
-                        # Your code to handle the message text goes here
+                        
+                        # Send a reply message using the send_message function
+                        page_access_token = session.get("page")  # Replace with your actual Page Access Token
+                        send_message( page_id,page_access_token, recipient_id, "ssss")
+
+
+
+def refresh_user_access_token( ):
+    short_lived_token =active_user
+    print(short_lived_token)
+    FACEBOOK_CLIENT_ID = "936489797983122"
+    FACEBOOK_CLIENT_SECRET = "0f5365e775d2923b060a102cde21edc4"
+    url = 'https://graph.facebook.com/v12.0/oauth/access_token'
+    params = {
+        'grant_type': 'fb_exchange_token',
+        'client_id': FACEBOOK_CLIENT_ID,
+        'client_secret': FACEBOOK_CLIENT_SECRET,
+        'fb_exchange_token': short_lived_token
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    if 'access_token' in data:
+        return data['access_token']
+    else:
+        return None
+
+
+def send_message(pageid,page_access_token, recipient_id, message_text):
+    
+    
+    access_token_user = refresh_user_access_token()
+    pagess = get_page_access_token(access_token_user)
+    page_final = tokens.gettoken(1)
+    page_final1  = page_final.activetoken
+
+    url = "https://graph.facebook.com/v19.0/me/messages"
+    params = {
+    "recipient": {"id": recipient_id},
+    "messaging_type": "RESPONSE",
+    "message": {"text": "HELLO"},
+    "access_token": page_final1}
+    response = requests.post(url, json=params)
+    
+    if response.status_code == 200:
+        print("Message sent successfully.")
+    else:
+        print(f"Failed to send message. Status code: {response.status_code}")
+        print(response.text)
 
 
 @app.route("/common")
