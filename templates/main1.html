@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Chat App</title>
+  <style>
+
+    .container1 {
+      border: 2px solid #dedede;
+      background-color: #f1f1f1;
+      border-radius: 5px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    
+    .darker {
+      border-color: #ccc;
+      background-color: #ddd;
+    }
+    
+    .container1::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+    
+    .container1 img {
+      float: left;
+      max-width: 60px;
+      width: 100%;
+      margin-right: 20px;
+      border-radius: 50%;
+    }
+    
+    .container1 img.right {
+      float: right;
+      margin-left: 20px;
+      margin-right:0;
+    }
+    
+    .time-right {
+      float: right;
+      color: #aaa;
+    }
+    
+    .time-left {
+      float: left;
+      color: #999;
+    }
+
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+    }
+    
+    .side-nav {
+      flex: 0 0 200px;
+      background-color: #4e56b7;
+      color: #fff;
+      padding: 20px;
+    }
+    
+    .side-nav nav ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    .side-nav nav ul li {
+      padding: 10px;
+    }
+    
+    .side-nav nav ul li a {
+      color: #fff;
+      text-decoration: none;
+    }
+    
+    .side-nav nav ul li a:hover {
+      background-color: #555;
+    }
+    
+    .chat-list {
+      flex: 0 0 200px;
+      padding: 20px;
+      background-color: #f2f2f2;
+      overflow-y: auto;
+    }
+    
+    .chats {
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    .chat {
+      cursor: pointer;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .chat:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .chat-display {
+      flex: 1;
+      padding: 20px;
+      background-color: #fff;
+      overflow-y: auto;
+    }
+    
+    .chat-messages {
+      max-height: 60vh;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    
+    .message {
+      margin-bottom: 10px;
+    }
+    
+    .chat-input {
+      margin-top: 20px;
+    }
+    
+    .chat-input input {
+      width: calc(100% - 70px);
+      padding: 8px;
+    }
+    
+    .chat-input button {
+      width: 60px;
+      padding: 8px;
+      margin-left: 10px;
+    }
+    .chat-hidden {
+      display: none;
+    }
+    .chat-input, .chat-messages {
+      display: none;
+    }
+    
+   
+  </style>  
+ <href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="tailwindcss-colors.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+ 
+</head>
+<body>
+  <div class="container">
+    <section class="side-nav" style = "background-color: #4e56b7;"  >
+      <nav>
+        <ul>
+ <li>
+       <center>             <a href="{{ url_for('common')}}" data-title="Home" style = "color :white;"
+                      ><i style = "color:white;" class="fa fa-recycle"></i
+                    ></a></center>
+                  </li>
+<li>
+                <center>    <a href="{{ url_for('common')}}"  data-title="users" style = "color :white;"
+                      ><i style = "color:white;" class="fas fa-users"></i
+                    ></a></center>
+                  </li>
+
+     
+          <li>
+         <center>           <a href="#" data-title="inbox" style = "color :white;"
+                      ><i style = "color :white;" class="fas fa-inbox"></i
+                    ></a></center>
+      <li>
+      <center>        <a href="{{ url_for('common')}}"  data-title="Charts" style = "color :white;"><i style = "color :white;" class="fas fa-chart-bar"></i></a></center>
+            </li>
+            <li>
+              <center>        <a href="{{ url_for('logout')}}"  data-title="Back" style = "color :white;"><i style = "color :white;" class="fas fa-sign-out-alt"></i></a></center>
+                    </li>
+        </ul>
+      </nav>
+    </section>
+    <section class="chat-list">
+      <ul class="chats">
+       
+      </ul>
+    </section>
+    <section class="chat-display">
+      <div class="chat-messages">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No messages for today.</p>
+        {% endif %}
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Type your message">
+        <button>Send</button>
+      </div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatList = document.querySelectorAll('.chat');
+    const chatMessages = document.querySelector('.chat-messages');
+    const chatInput = document.querySelector('.chat-input');
+  
+     Initial state: Hide chat input and chat messages
+   chatInput.classList.add('chat-hidden');
+   chatMessages.classList.add('chat-hidden');
+  
+    chatList.forEach(function(chat) {
+      chat.addEventListener('click', function() {
+        // Clear existing messages
+        chatMessages.innerHTML = '';
+  
+        // Simulate loading messages
+        //for (let i = 0; i < 10; i++) {
+          //const message = document.createElement('div');
+         // message.classList.add('message');
+        //  message.textContent = 'Message ' + (i + 1);
+        //  chatMessages.appendChild(message);
+       // }
+  
+        // Show chat input and chat messages
+       // chatInput.classList.remove('chat-hidden');
+       // chatMessages.classList.remove('chat-hidden');
+      });
+    });
+  });
+
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatList = document.querySelector('.chats');
+  
+    // Function to add a new chat to the list
+    function addChat(chatName) {
+      const newChat = document.createElement('li');
+      newChat.classList.add('chat');
+      newChat.textContent = chatName;
+      chatList.appendChild(newChat);
+      
+      // Add event listener to new chat
+      newChat.addEventListener('click', function() {
+        // Code to handle chat selection
+      });
+    }
+  
+    // Example usage: adding a new chat named "New Chat"
+    // Replace this with your backend logic to add chats dynamically
+    // You might receive new chat names from an API call, for example
+    addChat("New Chat");
+  });
+  
+    d
+    document.addEventListener('DOMContentLoaded', function() {
+        const socket = io();
+        const messagesList = document.getElementById('messages');
+
+        // Function to handle sending messages to the server
+        function sendMessageToServer(message) {
+            socket.emit('send_message_to_server', { 'message': message });
+        }
+
+        // Example usage: Send a message to the server when a button is clicked
+        const sendButton = document.getElementById('send-button');
+        const messageInput = document.getElementById('message-input');
+
+        sendButton.addEventListener('click', function() {
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                sendMessageToServer(message);
+                messageInput.value = ''; // Clear the input field
+            }
+        });
+
+        // Listen for 'new_message' event from the server
+        socket.on('new_message', function(data) {
+            // Handle the received message and display it in the UI
+            const receivedMessage = data.message;
+            
+            console.log(receivedMessage)
+            
+        });
+    });
+</script>
+
+
+
+    
+</script>  
+</html>

@@ -3,217 +3,468 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Chat App</title>
+  <title>richpanel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <style>
+    /* Global styles */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
     .container {
       display: flex;
       flex-direction: row;
       height: 100vh;
     }
-    
+
     .side-nav {
-      flex: 0 0 200px;
+      flex: 0 0 40px; /* Adjusted width for the side nav */
       background-color: #4e56b7;
       color: #fff;
       padding: 20px;
     }
-    
+
     .side-nav nav ul {
       list-style-type: none;
       padding: 0;
     }
-    
+
     .side-nav nav ul li {
       padding: 10px;
     }
-    
+
     .side-nav nav ul li a {
       color: #fff;
       text-decoration: none;
     }
-    
+
     .side-nav nav ul li a:hover {
       background-color: #555;
     }
-    
+
     .chat-list {
-      flex: 0 0 200px;
+      flex: 0 0 180px; /* Adjusted width for the chat list */
       padding: 20px;
-      background-color: #f2f2f2;
+      background-color: #fff; /* Set background color to white */
       overflow-y: auto;
+      border-bottom: 1px solid #ccc; /* Border at the bottom */
+      border-right: 1px solid #ccc; /* Thin line border on the right */
     }
-    
+
     .chats {
       list-style-type: none;
       padding: 0;
+      margin-top: 0;
     }
-    
+
+    .chat-list h3 {
+      
+      margin-top: 0;
+    }
+
+    .refresh-button {
+      display: flex;
+      align-items: center;
+    }
+
+    .refresh-button i {
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
     .chat {
       cursor: pointer;
       padding: 10px;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid #ccc; /* Horizontal line between chat names */
     }
-    
+
     .chat:hover {
       background-color: #e0e0e0;
     }
-    
+
+    .chat:last-child {
+      border-bottom: none; /* Remove bottom border from last chat */
+    }
+
+   
+
     .chat-display {
-      flex: 1;
+      flex: 2 0 120px; 
+      position: relative;
       padding: 20px;
-      background-color: #fff;
+      background-color: #f2f2f2; /* Set background color to gray */
       overflow-y: auto;
+      display: none; /* Initially hidden */
     }
-    
+    .profile-display {
+      flex: 1 0 150px; /* Adjusted flex-basis to make the profile display wider */
+      position: relative;
+      padding: 20px;
+      background-color: #f2f2f2; /* Set background color to gray */
+      overflow-y: auto;
+      display: none; /* Initially hidden */
+    }
+
+
+
+
     .chat-messages {
-      max-height: 60vh;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      padding: 10px;
+      height: calc(100% - 60px); /* Set a fixed height for the chat messages container */
+      overflow-y: auto; /* Allow vertical scrolling */
+      padding: 20px;
+      box-sizing: border-box; /* Include padding in height calculation */
     }
-    
+
     .message {
-      margin-bottom: 10px;
+      clear: both;
+      overflow: hidden;
+      margin: 10px 0;
     }
-    
-    .chat-input {
-      margin-top: 20px;
+
+    .message img {
+      float: left;
+      border-radius: 50%;
+      margin-right: 10px;
     }
-    
-    .chat-input input {
-      width: calc(100% - 70px);
-      padding: 8px;
+
+    .message p {
+      background-color: #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      max-width: 70%;
+      float: left;
     }
-    
-    .chat-input button {
-      width: 60px;
-      padding: 8px;
+
+    .message.right p {
+      background-color: #4e56b7;
+      color: white;
+      float: right;
+    }
+
+    .message.right img {
+      float: right;
+      margin-right: 0;
       margin-left: 10px;
     }
-    .chat-hidden {
-      display: none;
+
+    .message.flask p {
+      background-color: #ccc; /* Gray background for Flask messages */
+      color: black;
     }
-    .chat-input, .chat-messages {
-      display: none;
+
+    /* Profile section styles */
+    .profile-display {
+      
+      border-left: 1px solid #ccc; /* Add border between chat display and profile */
+      box-sizing: border-box; /* Include border in width calculation */
+      position: relative; /* Make position relative for absolute positioning */
+    }
+
+    .profile-header {
+      text-align: center; /* Center align text */
+      margin-bottom: 20px; /* Add bottom margin for spacing */
+    }
+
+    .profile-image-box {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      background-color: #fff;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 0 auto;
+      margin-bottom: 10px;
+    }
+    .profile-buttons {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      z-index: 1; /* Ensure buttons appear above other elements */
     }
     
+    .profile-button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      background-color: white;
+      color: #4e56b7;
+      border: 1px solid #4e56b7;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .profile-image {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    
+
+    .profile-image img {
+      width: 100%; /* Ensure image fills the container */
+      height: auto; /* Maintain aspect ratio */
+      display: block; /* Prevent inline spacing */
+      background-image: url('profile.png'); 
+    }
+
    
-  </style>  
- <href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="tailwindcss-colors.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
- 
+
+
+    /* Card styles */
+    .profile-card {
+      background-color: #fff; /* Set background color to white */
+      padding: 20px; /* Add padding */
+      margin-top: 20px; /* Add top margin */
+      border: 1px solid #ccc; /* Add border */
+    }
+
+    .card-label {
+      margin: 10px 0; /* Add margin */
+      font-weight: bold; /* Make label bold */
+    }
+
+    .section-label-box {
+      background-color: #4e56b7;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+
+    .chat-input {
+      position: absolute; /* Position the input box and send button absolutely */
+      bottom: 0; /* Position at the bottom */
+      left: 0; /* Position at the left */
+      width: 100%; /* Occupy full width */
+      padding: 10px; /* Add padding */
+      box-sizing: border-box; /* Include padding in width calculation */
+      display: flex; /* Display as flex for alignment */
+    }
+    
+    #messageInput {
+      flex: 1; /* Input box occupies remaining space */
+      width: 70%; /* Adjust the width as needed */
+      height: 20px; /* Adjust the height as needed */
+      padding: 10px; /* Add padding for better appearance */
+      font-size: 16px; /*
+    }
+    
+    #sendButton {
+      margin-left: 10px; /* Add margin between input box and send button */
+      width: 18%; /* Adjust the width as needed */
+      height: 20px; /* Adjust the height as needed */
+      font-size: 16px; /* Increase the font size for better readability */
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <section class="side-nav" style = "background-color: #4e56b7;"  >
+    <section class="side-nav">
       <nav>
         <ul>
- <li>
-       <center>             <a href="{{ url_for('common')}}" data-title="Home" style = "color :white;"
-                      ><i style = "color:white;" class="fa fa-recycle"></i
-                    ></a></center>
-                  </li>
-<li>
-                <center>    <a href="{{ url_for('common')}}"  data-title="users" style = "color :white;"
-                      ><i style = "color:white;" class="fas fa-users"></i
-                    ></a></center>
-                  </li>
-
-     
           <li>
-         <center>           <a href="#" data-title="inbox" style = "color :white;"
-                      ><i style = "color :white;" class="fas fa-inbox"></i
-                    ></a></center>
-      <li>
-      <center>        <a href="{{ url_for('common')}}"  data-title="Charts" style = "color :white;"><i style = "color :white;" class="fas fa-chart-bar"></i></a></center>
-            </li>
-            <li>
-              <center>        <a href="{{ url_for('logout')}}"  data-title="Back" style = "color :white;"><i style = "color :white;" class="fas fa-sign-out-alt"></i></a></center>
-                    </li>
+            <center>
+              <a href="{{ url_for('common')}}" data-title="Home">
+                <i class="fas fa-home"></i>
+              </a>
+            </center>
+          </li>
+          <li>
+            <center>
+              <a href="{{ url_for('common')}}" data-title="users">
+                <i class="fas fa-users"></i>
+              </a>
+            </center>
+          </li>
+          <li>
+            <center>
+              <a href="#" data-title="inbox">
+                <i class="fas fa-inbox"></i>
+              </a>
+            </center>
+          </li>
+          <li>
+            <center>
+              <a href="{{ url_for('common')}}" data-title="Charts">
+                <i class="fas fa-chart-bar"></i>
+              </a>
+            </center>
+          </li>
+          <li>
+            <center>
+              <a href="{{ url_for('logout')}}" data-title="Back">
+                <i class="fas fa-sign-out-alt"></i>
+              </a>
+            </center>
+          </li>
         </ul>
       </nav>
     </section>
     <section class="chat-list">
-      <ul class="chats">
+      <div class="refresh-button">
        
+          <h3 class="section-label">&nbsp &nbsp Conversations
+          <i class="fas fa-sync-alt" id="refreshButton"></i></h3>
+        </div>
+      
+      <ul class="chats">
+        <!-- Chat list items will be dynamically added here -->
       </ul>
     </section>
     <section class="chat-display">
+      <div class="refresh-button">
+       
+          <h3 style = "margin-top: 0;" class="section-label">&nbsp &nbsp 
+       
+        </div>
       <div class="chat-messages">
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No messages for today.</p>
-        {% endif %}
+        <!-- Chat messages will be displayed here -->
       </div>
       <div class="chat-input">
-        <input type="text" placeholder="Type your message">
-        <button>Send</button>
+        <input type="text" id="messageInput" placeholder="Type your message">
+        <button id="sendButton">Send</button>
+      </div>
+    </section>
+    <section class="profile-display">
+      <div class="profile-header">
+        <h2 class="section-label"></h2>
+        <div class="profile-image-box">
+          <div class="profile-image">
+            <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile Image">
+          </div>
+        
+          <div class="profile-buttons">
+            <br>
+            <button class="profile-button">Call</button>
+            <button class="profile-button">Profile</button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-card">
+        <div class="card-label">Sender Details</div>
+        <div class="card-label" id="senderEmail"></div>  
+        <div class="card-label" id="senderFirstName"></div>
+        <div class="card-label" id="senderLastName"></div>
       </div>
     </section>
   </div>
-  <script src="script.js"></script>
-</body>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const chatList = document.querySelectorAll('.chat');
-    const chatMessages = document.querySelector('.chat-messages');
-    const chatInput = document.querySelector('.chat-input');
-  
-     Initial state: Hide chat input and chat messages
-   chatInput.classList.add('chat-hidden');
-   chatMessages.classList.add('chat-hidden');
-  
-    chatList.forEach(function(chat) {
-      chat.addEventListener('click', function() {
-        // Clear existing messages
-        chatMessages.innerHTML = '';
-  
-        // Simulate loading messages
-        //for (let i = 0; i < 10; i++) {
-          //const message = document.createElement('div');
-         // message.classList.add('message');
-        //  message.textContent = 'Message ' + (i + 1);
-        //  chatMessages.appendChild(message);
-       // }
-  
-        // Show chat input and chat messages
-       // chatInput.classList.remove('chat-hidden');
-       // chatMessages.classList.remove('chat-hidden');
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const socket = io();
+      const chatList = document.querySelector('.chats');
+      const chatDisplay = document.querySelector('.chat-display');
+      const profileDisplay = document.querySelector('.profile-display');
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      const refreshButton = document.getElementById('refreshButton');
+    
+      // Function to add a new chat to the list or update existing chat
+      function addChat(chatName, message, isFlaskMessage) {
+        if (!chatList) {
+          console.error('Unable to find chatList element.');
+          return;
+        }
+    
+        // Check if chat already exists
+        const existingChat = document.querySelector(`.chat[data-name="${chatName}"]`);
+        if (existingChat) {
+          // Append message to existing chat
+          const messageElement = document.createElement('div');
+          messageElement.classList.add('message');
+          if (isFlaskMessage) {
+            messageElement.classList.add('flask');
+          }
+          messageElement.innerHTML = `<p>${message}</p>`;
+          chatDisplay.querySelector('.chat-messages').appendChild(messageElement);
+        } else {
+          // Create new chat
+          const newChat = document.createElement('li');
+          newChat.classList.add('chat');
+          newChat.setAttribute('data-name', chatName); // Set data attribute for identification
+          newChat.textContent = chatName;
+          chatList.appendChild(newChat);
+    
+          // Add event listener to new chat
+          newChat.addEventListener('click', function() {
+            // Show chat display section
+            chatDisplay.style.display = 'block';
+            // Show profile section
+            profileDisplay.style.display = 'block';
+    
+            // Clear existing messages
+            chatDisplay.querySelector('.chat-messages').innerHTML = '';
+    
+            // Update sender name
+            document.querySelector('.chat-display .section-label').textContent = chatName;
+    
+            // Display message for the selected chat
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            if (isFlaskMessage) {
+              messageElement.classList.add('flask');
+            }
+            messageElement.innerHTML = `<p>${message}</p>`;
+            chatDisplay.querySelector('.chat-messages').appendChild(messageElement);
+    
+            // Add your logic to display profile content based on the selected chat
+          });
+        }
+      }
+    
+      // Listen for 'new_message' event from the server
+      socket.on('new_message', function(data) {
+        const senderName = data.sender_name;
+        const messageText = data.message;
+        const isFlaskMessage = data.is_flask_message; // Add this property to your data from Flask
+        addChat(senderName, messageText, isFlaskMessage);
+        
+        // Split sender's name into first name and last name
+        const [senderFirstName, senderLastName] = senderName.split(' ');
+    
+        // Set first name and last name in the corresponding elements
+        document.getElementById('senderEmail').textContent = `Email: richpanel@example.com`;
+        document.getElementById('senderFirstName').textContent = `First Name: ${senderFirstName}`;
+        document.getElementById('senderLastName').textContent = `Last Name: ${senderLastName}`;
+      });
+    
+      // Send message to Flask server when send button is clicked
+      sendButton.addEventListener('click', function() {
+        const message = messageInput.value.trim();
+        if (message !== '') {
+          // Emit 'send_message_to_server' event to the server
+          socket.emit('message_from_client', { 'message': message });
+          messageInput.value = ''; // Clear the input field
+    
+          // Display sent message above the input box
+          const sentMessageElement = document.createElement('div');
+          sentMessageElement.classList.add('message', 'right');
+          sentMessageElement.innerHTML = `<p>${message}</p>`;
+          chatDisplay.querySelector('.chat-messages').appendChild(sentMessageElement);
+        }
+      });
+    
+      // Refresh chat list when refresh button is clicked
+      refreshButton.addEventListener('click', function() {
+        // Remove existing chats
+        chatList.innerHTML = '';
+    
+        // Emit 'refresh_chat_list' event to the server
+        socket.emit('refresh_chat_list');
       });
     });
-  });
-
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const chatList = document.querySelector('.chats');
-  
-    // Function to add a new chat to the list
-    function addChat(chatName) {
-      const newChat = document.createElement('li');
-      newChat.classList.add('chat');
-      newChat.textContent = chatName;
-      chatList.appendChild(newChat);
-      
-      // Add event listener to new chat
-      newChat.addEventListener('click', function() {
-        // Code to handle chat selection
-      });
-    }
-  
-    // Example usage: adding a new chat named "New Chat"
-    // Replace this with your backend logic to add chats dynamically
-    // You might receive new chat names from an API call, for example
-    addChat("New Chat");
-  });
-  
-</script>  
+    
+  </script>
+</body>
 </html>
