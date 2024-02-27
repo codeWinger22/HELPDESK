@@ -340,4 +340,133 @@ class tokens:
         finally:
             con.close()
 
+
+
+
+class conversation:
+    def __init__(self,id,page,sender):
+        self.id = id
+        self.page =page
+        self.sender = sender
+       
+    
+
+     
+    @staticmethod
+    def getdata(id):
+      
+        print(type(id))
+        print(id)
+        user = None
+        try:
+            con = sqlite3.connect("database.db")
+           
         
+        except:
+            print("problem in connecting to database")
+       
+
+        try:
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
+            cur.execute('SELECT * FROM conversation WHERE id = ? ', (id, ))
+            rows = cur.fetchone()
+            if not rows:
+                return None
+            else:
+                user = conversation(id = rows[0],page=rows[1],sender = rows[2])
+                print("this is user from get method ",user)
+                
+
+
+        
+
+            
+
+
+        #user = db.execute("SELECT * FROM user").fetchall()
+         
+           
+        except Exception as e:
+            print(e)
+        finally:
+            con.close()
+        
+        return user
+  
+  
+    
+    @staticmethod
+    def updatepage(id,page):
+        try:
+            con = sqlite3.connect("database.db")
+            cur = con.cursor()
+        except:
+            print("connection error in user update function")
+        try:
+            cur.execute("UPDATE conversation SET page = ?  WHERE id = ?",  (page,id))
+
+            con.commit()
+            print("Record successfully updated to database")
+          
+
+        except Exception as e:
+            con.rollback()
+            print("Error in the UPDATE")
+            print(e)
+
+
+
+        finally:
+            con.close()
+
+     
+    @staticmethod
+    def create(id,page, sender):
+        try:
+            con = sqlite3.connect("database.db")
+            cur = con.cursor()
+        except:
+            print("connection error in page create function")
+        try:
+            
+            cur.execute("INSERT INTO conversation(id,page,sender) VALUES (?,?,?)",(id,page,sender))
+            con.commit()
+            print("Record successfully added to database")
+          
+
+        except Exception as e:
+            con.rollback()
+            print("Error in the INSERT")
+            print(e)
+
+
+
+        finally:
+            con.close()
+
+    @staticmethod
+    def updatesender(id,sender):
+        try:
+            con = sqlite3.connect("database.db")
+            cur = con.cursor()
+        except:
+            print("connection error in user update function")
+        try:
+            cur.execute("UPDATE conversation SET sender = ?  WHERE id = ?",  (sender,id))
+
+            con.commit()
+            print("Record successfully updated to database")
+          
+
+        except Exception as e:
+            con.rollback()
+            print("Error in the UPDATE")
+            print(e)
+
+
+
+        finally:
+            con.close()
+
+     

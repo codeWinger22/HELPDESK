@@ -12,7 +12,7 @@
     }
     
     .side-nav {
-      flex: 0 0 200px;
+      flex: 0 0 50px;
       background-color: #4e56b7;
       color: #fff;
       padding: 20px;
@@ -121,12 +121,15 @@
 
      
           <li>
-         <center>           <a href="{{ url_for('webhook')}}" data-title="inbox" style = "color :white;"
+         <center>           <a href="{{ url_for('mainWindow')}}" data-title="inbox" style = "color :white;"
                       ><i style = "color :white;" class="fas fa-inbox"></i
                     ></a></center>
       <li>
       <center>        <a href="#"  data-title="Charts" style = "color :white;"><i style = "color :white;" class="fas fa-chart-bar"></i></a></center>
             </li>
+            <li>
+              <center>        <a href="{{ url_for('logout')}}"  data-title="Back" style = "color :white;"><i style = "color :white;" class="fas fa-sign-out-alt"></i></a></center>
+                    </li>
         </ul>
       </nav>
     </section>

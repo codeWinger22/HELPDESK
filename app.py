@@ -25,7 +25,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, m
 from init_db import initialize
 from authlib.integrations.flask_client import OAuth
 from flask_cors import CORS, cross_origin
-from user import User,UserManual,tokens
+from user import User,UserManual,tokens,conversation
 import subprocess
 from flask_wtf import CSRFProtect
 import sqlite3
@@ -39,6 +39,8 @@ from oauthlib.oauth2 import WebApplicationClient
 #WebapplicationClient because we are building it on the client side
 import requests
 from flask_cors import CORS, cross_origin
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # set up the environment variable
 # this environment variable need to be set in order to run it over http
@@ -62,6 +64,13 @@ app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24)
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 
 socketio = SocketIO(app)
+cred = credentials.Certificate("serviceAccountKey.json")
+firebase_admin.initialize_app(cred)
+
+# Access Firestore
+db = firestore.client()
+
+
 app.config['SERVER_NAME'] = 'localhost:5000'
 global oauth
 oauth = OAuth(app)
@@ -73,6 +82,9 @@ global usertoken
 usertoken = ""
 global active_user
 active_user = None
+CORS(app, origins=["http://localhost:5000"])
+cors = CORS(app, resource={r"/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 # initialize a handler
 @login_manager.unauthorized_handler
 def unauthorized():
@@ -359,8 +371,15 @@ def facebook_auth():
             
             session["page"] = page_access_token[0]
             session["pageid"] =page_access_token[1]
+            #pageid ,senderid 
+            search0 = conversation.getdata(1)
+            if(search0 != None):
+                conversation.updatepage(1,page_access_token[1])
+            else:
+                conversation.create(1,page_access_token[1],1)
             perman = get_long_lived_token(access_token,page_access_token[1])
             search = tokens.gettoken(1)
+            
             if(search != None):
                 tokens.update(1,perman)
             else:
@@ -412,11 +431,17 @@ def pages():
         
         if response.status_code == 200:
             pages_data = response.json()
+            page_name = pages_data['data'][0]['name']
+            
+            content = {'name':page_name , 'tokens':'s'}
+            return render_template("facebookintro.html",content = content)
             return str(pages_data)  # Return information about Facebook pages
         else:
             return 'Failed to fetch pages'
     else:
         return redirect(url_for('facebook'))  # 
+        
+        
 
 def get_page_access_token(user_access_token):
     FACEBOOK_CLIENT_ID = "936489797983122"
@@ -498,8 +523,6 @@ def subscribe_to_webhook( page_access_token,page_id):
             print(f"Failed to subscribe to webhook events: {error.decode()}")
     except Exception as e:
         print(f"Error: {e}")
-
-
 
 
 
@@ -740,6 +763,9 @@ def get_google_provider_cfg():
 #         # Handle incoming events
 #         return 'OK', 200
 
+@app.route("/mainWindow")
+def mainWindow():
+    return render_template("main.html")
 
 @app.route('/webhook',methods=['GET', 'POST'])
 def webhook():
@@ -772,7 +798,12 @@ def process_webhook_data(data):
     # Extract recipient ID and page ID from the response
     recipient_id = data['entry'][0]['messaging'][0]['sender']['id']
     page_id = data['entry'][0]['messaging'][0]['recipient']['id']
-    
+    sender_id = data['entry'][0]['messaging'][0]['sender']['id']
+    search2 = conversation.getdata(1)
+    if(search2 != None):
+        conversation.updatesender(1,sender_id)
+    else:
+        conversation.create(1,1,sender_id)
     # Example: Extract message text from data and process it
     if 'entry' in data and len(data['entry']) > 0:
         for entry in data['entry']:
@@ -780,13 +811,40 @@ def process_webhook_data(data):
                 for message in entry['messaging']:
                     if 'message' in message and 'text' in message['message']:
                         message_text = message['message']['text']
+                      
+                        sender_name = get_sender_name(sender_id)
+
+                        print(f"Received message from {sender_name}: {message_text}")
                         print("Received message:", message_text)
+                       
+
                         
+                        socketio.emit('new_message', {'message': message_text, 'sender_name': sender_name}, broadcast=True)
+                        print("emmited")
+                        searching = conversation.getdata(1)
+                        if(searching != None):
+                            searching1 = searching.page
+                            print("doneee got the page id")
+                        store_conversation_data(datetime.now().date(), sender_id, searching1, message)
+                        
+                        #global recid
+                        #recid = recipient_id
                         # Send a reply message using the send_message function
                         page_access_token = session.get("page")  # Replace with your actual Page Access Token
-                        send_message( page_id,page_access_token, recipient_id, "ssss")
+                        #send_message( page_id,page_access_token, recipient_id, "ssss")
 
-
+def get_sender_name(sender_id):
+    page_d = tokens.gettoken(1)
+    page_d1  = page_d.activetoken
+    # Make a request to Facebook's Graph API to get sender's profile information
+    profile_url = f"https://graph.facebook.com/{sender_id}"
+    params = {
+        "fields": "name",
+        "access_token": page_d1
+    }
+    response = requests.get(profile_url, params=params)
+    data = response.json()
+    return data.get("name", "Unknown")
 
 def refresh_user_access_token( ):
     short_lived_token =active_user
@@ -808,24 +866,33 @@ def refresh_user_access_token( ):
         return None
 
 
-def send_message(pageid,page_access_token, recipient_id, message_text):
+def send_message(message):
     
     
     access_token_user = refresh_user_access_token()
     pagess = get_page_access_token(access_token_user)
     page_final = tokens.gettoken(1)
     page_final1  = page_final.activetoken
-
+    
+    
+    #recipient_id = recid
+    r = conversation.getdata(1)
+    if(r !=None):
+        r1 = r.sender
+        r2 = r.page
     url = "https://graph.facebook.com/v19.0/me/messages"
     params = {
-    "recipient": {"id": recipient_id},
+    "recipient": {"id": r1},
     "messaging_type": "RESPONSE",
-    "message": {"text": "HELLO"},
+    "message": {"text": message},
     "access_token": page_final1}
     response = requests.post(url, json=params)
     
     if response.status_code == 200:
         print("Message sent successfully.")
+        store_conversation_data(datetime.now().date(), r1, r2, message)
+        
+
     else:
         print(f"Failed to send message. Status code: {response.status_code}")
         print(response.text)
@@ -836,19 +903,63 @@ def common():
     return render_template("common.html")
 
 
+# Function to store message data in MongoDB
+# def store_message_data(date, sender_id, recipient_id, message_text):
+#     collection_name = date.strftime("%Y-%m-%d")
+    
+#     # Check if the collection already exists
+#     if collection_name not in db.list_collection_names():
+#         db.create_collection(collection_name)
+    
+#     collection = db[collection_name]
+#     document = collection.find_one({"_id": sender_id})
+
+#     if document:
+#         # If sender document exists, update the conversation with recipient
+#         conversation = document.get("conversation", {})
+#         conversation[recipient_id] = conversation.get(recipient_id, []) + [{"message": message_text, "timestamp": datetime.now()}]
+#         collection.update_one({"_id": sender_id}, {"$set": {"conversation": conversation}})
+#     else:
+#         # If sender document does not exist, create a new one
+#         conversation = {recipient_id: [{"message": message_text, "timestamp": datetime.now()}]}
+#         collection.insert_one({"_id": sender_id, "conversation": conversation})
+
+
+# Get a database reference
+
+def store_conversation_data(date, sender_id, page_id, conversation):
+    # Format the date
+    date_str = date.strftime("%Y-%m-%d")
+    
+    # Reference to the document
+    doc_ref = db.collection(date_str).document(sender_id)
+    
+    # Check if the document already exists
+    if not doc_ref.get().exists:
+        # Create the document if it doesn't exist
+        doc_ref.set({
+            'page_id': page_id,
+            'conversations': []  # Initialize conversations as empty list
+        })
+    
+    # Update the document with the new conversation
+    doc_ref.update({
+        'page_id': page_id,
+        'conversations': firestore.ArrayUnion([conversation])
+    })
 
 #socket io
 
 
 
-@socketio.on('send_message')
-def handle_send_message_event(data):
-    app.logger.info("{} has sent message to the room {}: {}".format(data['username'],
-                                                                    data['room'],
-                                                                    data['message']))
-    data['created_at'] = datetime.now().strftime("%d %b, %H:%M")
-    save_message(data['room'], data['message'], data['username'])
-    socketio.emit('receive_message', data, room=data['room'])
+@socketio.on('message_from_client')
+def handle_message(data):
+    message = data['message']
+    print(f"Received message from client: {message}")
+    send_message(message)
+
+
+
 
 
 
@@ -874,20 +985,8 @@ def after_request_func(response):
 
 
 
-@socketio.on('join_room')
-def handle_join_room_event(data):
-    app.logger.info("{} has joined the room {}".format(data['username'], data['room']))
-    join_room(data['room'])
-    socketio.emit('join_room_announcement', data, room=data['room'])
-
-
-@socketio.on('leave_room')
-def handle_leave_room_event(data):
-    app.logger.info("{} has left the room {}".format(data['username'], data['room']))
-    leave_room(data['room'])
-    socketio.emit('leave_room_announcement', data, room=data['room'])
-
 
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    #app.run(debug = True)
+    socketio.run(app, debug=True)

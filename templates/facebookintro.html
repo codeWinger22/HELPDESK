@@ -122,7 +122,7 @@ body {
      
         <p hidden>{{content.tokens}}</p>
         <br>
-        <button type="button" class="btn btn-primary" onclick="window.location.href = '{{ url_for('webhook')}}';">Reply Messages</button> &nbsp
+        <button type="button" class="btn btn-primary" onclick="window.location.href = '{{ url_for('mainWindow')}}';">Reply Messages</button> &nbsp
        
         &nbsp
         <button type="button" class="btn btn-primary" style = "background-color:red;"  onclick="window.location.href = '{{ url_for('deleteIntegration',variable = content.tokens)}}';">Disconnect</button>

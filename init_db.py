@@ -26,6 +26,12 @@ def initialize():
         print("Created table successfully!")
     except Exception as e:
         print(e)
+    
+    try:
+        conn.execute('CREATE TABLE if not exists conversation(id TEXT PRIMARY KEY , page TEXT NOT NULL,sender TEXT NOT NULL)')
+        print("Created table successfully!")
+    except Exception as e:
+        print(e)
 
-
+  
     
